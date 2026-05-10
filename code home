@@ -1,0 +1,656 @@
+"use client";
+import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  FiPlus,
+  FiSettings,
+  FiSearch,
+  FiBell,
+  FiX,
+  FiUploadCloud,
+  FiTrash2,
+  FiUser,
+  FiLogOut,
+  FiHelpCircle,
+  FiMessageCircle,
+} from "react-icons/fi";
+
+export default function Home({ onLogout }) {
+  // =========================
+  // PROFILE
+  // =========================
+  const [profile, setProfile] = useState(() => {
+    if (typeof window === "undefined") {
+      return {
+        username: "_thanh.12",
+        nickname: "thanh",
+        avatar: null,
+      };
+    }
+
+    const saved = localStorage.getItem("emomap_profile");
+
+    return saved
+      ? JSON.parse(saved)
+      : {
+          username: "_thanh.12",
+          nickname: "thanh",
+          avatar: null,
+        };
+  });
+
+  // =========================
+  // BOARDS
+  // =========================
+  const [boards, setBoards] = useState(() => {
+    if (typeof window === "undefined") return [];
+
+    const saved = localStorage.getItem("emomap_boards");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // =========================
+  // UI STATES
+  // =========================
+  const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showAddBoardModal, setShowAddBoardModal] = useState(false);
+  const [isHoverAvatar, setIsHoverAvatar] = useState(false);
+
+  // =========================
+  // NEW BOARD
+  // =========================
+  const [newBoard, setNewBoard] = useState({
+    title: "",
+    feeling: "",
+    emote: "😊",
+    image: null,
+  });
+
+  // =========================
+  // REFS
+  // =========================
+  const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
+
+  // =========================
+  // DATA
+  // =========================
+  const logoColors = [
+    "text-[#FF4D4D]",
+    "text-[#FF9933]",
+    "text-[#FFD700]",
+    "text-[#33CC33]",
+    "text-[#3399FF]",
+    "text-[#A64DFF]",
+  ];
+
+  // =========================
+  // SAVE LOCAL STORAGE
+  // =========================
+  useEffect(() => {
+    localStorage.setItem("emomap_profile", JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem("emomap_boards", JSON.stringify(boards));
+  }, [boards]);
+
+  // =========================
+  // CREATE BOARD
+  // =========================
+  const handleCreateBoard = () => {
+    if (!newBoard.title || !newBoard.image) {
+      alert("Hãy chọn ảnh và nhập địa điểm!");
+      return;
+    }
+
+    const board = {
+      ...newBoard,
+      id: Date.now(),
+      rotation: Math.floor(Math.random() * 8) - 4,
+      feeling: newBoard.feeling || "Ghim lại một khoảnh khắc...",
+    };
+
+    setBoards((prev) => [board, ...prev]);
+
+    setNewBoard({
+      title: "",
+      feeling: "",
+      emote: "😊",
+      image: null,
+    });
+
+    setShowAddBoardModal(false);
+  };
+
+  // =========================
+  // DELETE BOARD
+  // =========================
+  const deleteBoard = (id) => {
+    const confirmDelete = window.confirm(
+      "Bạn có muốn gỡ bỏ kỷ niệm này?"
+    );
+
+    if (!confirmDelete) return;
+
+    setBoards((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  // =========================
+  // UPLOAD IMAGE
+  // =========================
+  const handleBoardImage = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setNewBoard((prev) => ({
+        ...prev,
+        image: reader.result,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  // =========================
+  // UPLOAD AVATAR
+  // =========================
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setProfile((prev) => ({
+        ...prev,
+        avatar: reader.result,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FFFBEB] text-black font-sans pb-32">
+      {/* ========================= */}
+      {/* HEADER */}
+      {/* ========================= */}
+      <header className="px-10 py-8 sticky top-0 z-[70] bg-[#FFFBEB]/90 backdrop-blur-md">
+        <div className="border-[6px] border-black rounded-[50px] px-16 py-6 flex items-center justify-between shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] bg-white">
+          {/* LOGO */}
+          <div className="text-7xl font-black tracking-tighter flex select-none italic underline decoration-yellow-400 decoration-8 underline-offset-8">
+            {["E", "M", "O", "M", "A", "P"].map((char, i) => (
+              <span key={i} className={logoColors[i]}>
+                {char}
+              </span>
+            ))}
+          </div>
+
+          {/* MENU */}
+          <nav className="hidden lg:flex gap-20 text-4xl font-black uppercase tracking-tighter">
+            <span className="text-black border-b-[6px] border-black pb-2 cursor-pointer transition-transform hover:scale-110">
+              Home
+            </span>
+
+            <span className="text-gray-300 hover:text-black cursor-pointer transition-all hover:scale-110">
+              Feed
+            </span>
+
+            <span className="text-gray-300 hover:text-black cursor-pointer transition-all hover:scale-110">
+              Map
+            </span>
+          </nav>
+
+          {/* RIGHT */}
+          <div className="flex items-center gap-12">
+            <FiSearch
+              size={55}
+              className="cursor-pointer hover:text-blue-500 transition-all hover:scale-125"
+              strokeWidth={3}
+            />
+
+            {/* NOTIFICATIONS */}
+            <div
+              className="relative cursor-pointer"
+              onClick={() =>
+                setShowNotifications(!showNotifications)
+              }
+            >
+              <FiBell
+                size={55}
+                className="hover:scale-125 transition-all"
+                strokeWidth={3}
+              />
+
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xl font-black w-10 h-10 rounded-full flex items-center justify-center border-[4px] border-black shadow-md">
+                2
+              </span>
+
+              {showNotifications && (
+                <div className="absolute top-24 right-0 w-[450px] bg-white border-[6px] border-black rounded-[35px] shadow-[15px_15px_0px_0px_rgba(0,0,0,1)] p-8 z-50">
+                  <h4 className="text-3xl font-black border-b-4 border-black mb-6 pb-2 uppercase italic">
+                    Thông báo mới
+                  </h4>
+
+                  <div className="space-y-6">
+                    <div className="text-xl flex gap-4 items-center bg-blue-50 p-4 rounded-2xl border-2 border-black">
+                      <FiMessageCircle
+                        size={30}
+                        className="text-blue-600"
+                      />
+
+                      <span>
+                        <b>Admin:</b> Chào mừng trở lại!
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* AVATAR */}
+            <div
+              className="relative"
+              onMouseEnter={() => setIsHoverAvatar(true)}
+              onMouseLeave={() => setIsHoverAvatar(false)}
+            >
+              <div className="w-28 h-28 rounded-full border-[6px] border-black overflow-hidden bg-yellow-100 cursor-pointer shadow-2xl transition-all hover:rotate-12 hover:scale-110">
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FiUser
+                    size={65}
+                    className="m-auto mt-4 text-gray-400"
+                  />
+                )}
+              </div>
+
+              {isHoverAvatar && (
+                <div className="absolute top-full right-0 pt-8 w-[400px]">
+                  <div className="bg-white border-[6px] border-black rounded-[40px] shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+                    <div className="p-8 border-b-[6px] border-black bg-gray-50 flex items-center gap-6">
+                      <div className="w-20 h-20 rounded-full border-4 border-black overflow-hidden bg-white">
+                        <img
+                          src={
+                            profile.avatar ||
+                            `https://ui-avatars.com/api/?name=${profile.username}`
+                          }
+                          alt="avatar"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      <div>
+                        <p className="font-black text-3xl italic">
+                          {profile.nickname}
+                        </p>
+
+                        <p className="text-lg text-gray-500 font-bold">
+                          {profile.username}@emomap.com
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col text-2xl font-black">
+                      <button
+                        onClick={() => setShowSettings(true)}
+                        className="flex items-center gap-6 p-6 hover:bg-yellow-100 border-b-4 border-black transition-colors uppercase text-left"
+                      >
+                        <FiSettings size={30} />
+                        Cài đặt & quyền riêng tư
+                      </button>
+
+                      <button className="flex items-center gap-6 p-6 hover:bg-blue-100 border-b-4 border-black transition-colors uppercase">
+                        <FiHelpCircle size={35} />
+                        Trợ giúp & hỗ trợ
+                      </button>
+
+                      <button
+                        onClick={onLogout}
+                        className="flex items-center gap-6 p-6 hover:bg-red-100 text-red-600 transition-colors uppercase"
+                      >
+                        <FiLogOut size={35} />
+                        Đăng xuất
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ========================= */}
+      {/* MAIN */}
+      {/* ========================= */}
+      <main className="max-w-[1800px] mx-auto pt-16 px-12">
+        {/* PROFILE CARD */}
+        <div className="flex items-center gap-20 mb-24 bg-white border-[8px] border-black rounded-[80px] p-16 shadow-[25px_25px_0px_0px_rgba(59,130,246,1)]">
+          <div className="relative">
+            <div className="w-72 h-72 rounded-full border-[8px] border-black overflow-hidden shadow-2xl bg-gray-100 flex items-center justify-center">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt="profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FiUser
+                  size={150}
+                  className="text-gray-300"
+                />
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowSettings(true)}
+              className="absolute bottom-4 right-6 bg-yellow-400 p-6 rounded-full border-[5px] border-black hover:scale-125 transition-transform shadow-lg"
+            >
+              <FiSettings size={45} />
+            </button>
+          </div>
+
+          <div className="space-y-10">
+            <h2 className="text-9xl font-black tracking-tighter italic uppercase">
+              {profile.username}
+            </h2>
+
+            <div className="flex gap-16 text-4xl font-black items-center">
+              <span className="text-blue-600 bg-blue-50 px-10 py-4 rounded-[35px] border-[5px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] uppercase italic tracking-widest">
+                {profile.nickname}
+              </span>
+
+              <span>
+                <b>{boards.length}</b> bài viết
+              </span>
+
+              <span>
+                <b>0</b> followers
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ADD BOARD BUTTON */}
+        <button
+          onClick={() => setShowAddBoardModal(true)}
+          className="bg-white border-[6px] border-black px-20 py-10 rounded-[45px] font-black text-5xl shadow-[15px_15px_0px_0px_rgba(34,197,94,1)] hover:bg-green-50 transition-all mb-24 flex items-center gap-8"
+        >
+          <FiPlus size={70} strokeWidth={5} />
+          THÊM BOARD MỚI
+        </button>
+
+        {/* BOARD AREA */}
+        <div className="bg-white rounded-[100px] min-h-[1000px] p-32 border-[8px] border-black">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-32">
+            {boards.map((b) => (
+              <div
+                key={b.id}
+                style={{
+                  transform: `rotate(${b.rotation}deg)`,
+                }}
+                className="bg-white border-[6px] border-black p-12 rounded-[30px] shadow-[35px_35px_0px_0px_rgba(0,0,0,1)] relative group hover:rotate-0 transition-all duration-500"
+              >
+                {/* DELETE */}
+                <button
+                  onClick={() => deleteBoard(b.id)}
+                  className="absolute top-6 right-6 p-4 bg-red-50 text-red-600 border-4 border-black rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 hover:text-white"
+                >
+                  <FiTrash2 size={40} />
+                </button>
+
+                {/* IMAGE */}
+                <div className="w-full aspect-[4/3] rounded-[20px] overflow-hidden border-[4px] border-black mb-10 shadow-inner">
+                  <img
+                    src={b.image}
+                    alt={b.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* TITLE */}
+                <div className="flex justify-between items-center mb-10 border-b-[5px] border-black pb-6">
+                  <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none">
+                    {b.title}
+                  </h3>
+
+                  <span className="text-7xl">{b.emote}</span>
+                </div>
+
+                {/* FEELING */}
+                <div className="bg-gray-50 border-[5px] border-black border-dashed p-10 rounded-[40px] text-center">
+                  <p className="text-4xl font-black italic leading-tight text-gray-800">
+                    "{b.feeling}"
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* ========================= */}
+      {/* SETTINGS MODAL */}
+      {/* ========================= */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-2xl flex items-center justify-center z-[100] p-10">
+          <div className="bg-white border-[10px] border-black rounded-[80px] p-24 w-full max-w-[1000px] relative">
+            <button
+              onClick={() => setShowSettings(false)}
+              className="absolute top-16 right-16"
+            >
+              <FiX size={100} />
+            </button>
+
+            <h3 className="text-8xl font-black mb-20 text-center uppercase italic underline decoration-blue-500 decoration-8">
+              Profile
+            </h3>
+
+            <div className="flex flex-col gap-16">
+              {/* AVATAR */}
+              <div className="flex items-center justify-center gap-16 bg-yellow-50 p-12 rounded-[50px] border-4 border-black border-dashed">
+                <div className="w-56 h-56 rounded-full border-[6px] border-black overflow-hidden bg-white shadow-2xl">
+                  <img
+                    src={
+                      profile.avatar ||
+                      `https://ui-avatars.com/api/?name=${profile.username}`
+                    }
+                    alt="profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <button
+                  onClick={() =>
+                    avatarInputRef.current.click()
+                  }
+                  className="bg-black text-white px-12 py-8 rounded-[30px] font-black text-3xl"
+                >
+                  Đổi Avatar
+                </button>
+
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  hidden
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                />
+              </div>
+
+              {/* USERNAME */}
+              <div>
+                <label className="mb-6 block uppercase font-black">
+                  Username ID
+                </label>
+
+                <input
+                  type="text"
+                  className="w-full border-[6px] border-black p-10 rounded-[35px] text-5xl font-black outline-none"
+                  value={profile.username}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* NICKNAME */}
+              <div>
+                <label className="mb-6 block uppercase font-black">
+                  Biệt danh
+                </label>
+
+                <input
+                  type="text"
+                  className="w-full border-[6px] border-black p-10 rounded-[35px] text-5xl font-black outline-none"
+                  value={profile.nickname}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      nickname: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* SAVE */}
+              <button
+                onClick={() => setShowSettings(false)}
+                className="bg-black text-white py-12 rounded-[45px] font-black text-6xl"
+              >
+                Lưu Ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================= */}
+      {/* ADD BOARD MODAL */}
+      {/* ========================= */}
+      {showAddBoardModal && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[100] p-10">
+          <div className="bg-white border-[10px] border-black rounded-[80px] p-24 w-full max-w-[1300px] relative">
+            <button
+              onClick={() => setShowAddBoardModal(false)}
+              className="absolute top-12 right-12"
+            >
+              <FiX size={90} />
+            </button>
+
+            <div className="grid grid-cols-2 gap-24">
+              {/* IMAGE */}
+              <div
+                onClick={() => fileInputRef.current.click()}
+                className="aspect-square border-[8px] border-black border-dashed rounded-[60px] flex items-center justify-center cursor-pointer overflow-hidden bg-gray-50 hover:bg-yellow-50 transition-all shadow-inner"
+              >
+                {newBoard.image ? (
+                  <img
+                    src={newBoard.image}
+                    alt="board"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <FiUploadCloud
+                      size={150}
+                      className="m-auto text-gray-300"
+                    />
+
+                    <p className="font-black text-4xl text-gray-400 mt-8">
+                      CHỌN ẢNH XỊN
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  hidden
+                  accept="image/*"
+                  onChange={handleBoardImage}
+                />
+              </div>
+
+              {/* FORM */}
+              <div className="flex flex-col gap-10">
+                <input
+                  placeholder="Địa điểm?"
+                  className="w-full border-[6px] border-black p-10 rounded-[35px] font-black text-6xl shadow-inner outline-none"
+                  value={newBoard.title}
+                  onChange={(e) =>
+                    setNewBoard((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                />
+
+                <textarea
+  placeholder="Cảm xúc của bạn..."
+  className="w-full border-[6px] border-black p-10 rounded-[35px] font-black text-4xl text-center shadow-inner outline-none resize-none"
+  rows="4"
+  value={newBoard.feeling}
+  onChange={(e) =>
+    setNewBoard((prev) => ({
+      ...prev,
+      feeling: e.target.value,
+    }))
+  }
+/>
+
+{/* EMOJI PICKER */}
+<div className="flex flex-wrap gap-4 justify-center bg-yellow-50 border-[5px] border-black rounded-[35px] p-6">
+  {["😊", "😢", "🥰", "🤩", "🧘", "🔥", "🍕", "🌈", "🦄"].map(
+    (emoji) => (
+      <button
+        key={emoji}
+        type="button"
+        onClick={() =>
+          setNewBoard((prev) => ({
+            ...prev,
+            emote: emoji,
+          }))
+        }
+        className={`text-5xl p-4 rounded-2xl border-[4px] transition-all hover:scale-125 ${
+          newBoard.emote === emoji
+            ? "border-black bg-white scale-110"
+            : "border-transparent"
+        }`}
+      >
+        {emoji}
+      </button>
+    )
+  )}
+</div>
+
+                <button
+                  onClick={handleCreateBoard}
+                  className="bg-black text-white py-12 rounded-[45px] font-black text-6xl shadow-[15px_15px_0px_0px_rgba(255,77,77,1)] hover:translate-y-4 hover:shadow-none transition-all mt-6 uppercase italic"
+                >
+                  Ghim Bài
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
