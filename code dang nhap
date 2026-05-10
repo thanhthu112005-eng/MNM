@@ -1,0 +1,53 @@
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import './index.css';
+
+import Feed from './pages/Feed';
+import Home from './pages/Home';
+import HomeDetail from './pages/HomeDetail';
+import MapPage from './pages/MapPage';
+import Auth from './pages/Auth';
+
+export default function App() {
+  // Kiểm tra xem trong máy đã có trạng thái "đã đăng nhập" chưa khi vừa mở web
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
+
+  // Hàm này được gọi khi đăng nhập thành công từ file Auth.jsx
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('isLoggedIn', 'true'); // Lưu lại vào máy
+  };
+
+  // Nếu bạn muốn làm nút Đăng xuất, chỉ cần gọi hàm này
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn');
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Nếu đã đăng nhập mà cố vào /auth thì đẩy về trang chủ */}
+        <Route path="/auth" element={
+          isLoggedIn ? <Navigate to="/" /> : <Auth onLoginSuccess={handleLogin} />
+        } />
+
+        {/* Bảo vệ các trang nội bộ: Chưa login là bị đẩy ra trang /auth ngay */}
+        <Route path="/" element={
+          isLoggedIn ? <Navigate to="/home" replace /> : <Navigate to="/auth" replace />
+        } />
+        <Route path="/home" element={
+          isLoggedIn ? <Home onLogout={handleLogout} /> : <Navigate to="/auth" replace  />
+        } />
+        <Route path="/map" element={
+          isLoggedIn ? <MapPage /> : <Navigate to="/auth" replace />
+        } />
+        
+        {/* Bất kỳ đường dẫn lạ nào cũng đẩy về trang chính */}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
